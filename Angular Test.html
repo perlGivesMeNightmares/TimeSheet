@@ -1,0 +1,148 @@
+<!doctype html>
+<html>
+   <head> 
+      <title> Employee Test </title>
+      <style> 
+        body {
+            background-color:#FAF0E6;
+            font-size: 18px;
+            margin: 15px;
+            width: auto;
+            text-align: center;
+        }
+        table {
+            text-align: center;
+            overflow-x:auto;
+        }
+        tr:nth-child(even){background-color: #f2f2f2}
+        td.hideThis {
+           border: 0;
+         }
+        .signature {                       
+            border-bottom-width:1px;
+            border-bottom-style:solid;
+            width: 14%;
+            margin:0 auto;
+        }
+
+        .signatures {                       
+            text-decoration: underline;
+        }
+        </style>
+      <script src = "https://ajax.googleapis.com/ajax/libs/angularjs/1.3.14/angular.min.js"></script>
+   </head>
+   <body ng-app = "mainApp" ng-controller = "mainController">
+      <h1>Employee Timesheet</h1><br>
+      <form ng-submit = "employee.addHours()">
+         Name: &nbsp<input type="text" ng-model = "employee.holdName">&nbsp&nbsp
+         Wage ($): &nbsp<input type="text" ng-model = "employee.holdWage">&nbsp&nbsp
+         Week: &nbsp<input type="text" ng-model = "employee.holdWeek">&nbsp&nbsp
+         Hours: <input type="text" ng-model = "employee.holdHours"><br><br>
+         Mon <input type="radio" ng-model = "employee.holdDay" ng-value = 1>&nbsp&nbsp
+         Tue <input type="radio" ng-model = "employee.holdDay" ng-value = 2>&nbsp&nbsp
+         Wed <input type="radio" ng-model = "employee.holdDay" ng-value = 3>&nbsp&nbsp
+         Thr <input type="radio" ng-model = "employee.holdDay" ng-value = 4>&nbsp&nbsp
+         Fri <input type="radio" ng-model = "employee.holdDay" ng-value = 5>&nbsp&nbsp<br><br>
+         <button ng-click = "employee.addHours">Add Hours</button>
+      </form><br>
+      <table ng-repeat = "guy in employee.employeeList" border=1 align="center"ng-cloak>
+         <caption ng-click = "guy.hideVal = !(guy.hideVal)"><br>{{guy.name}}'s Timesheet [-]</caption>
+         <tr ng-hide = "guy.hideVal">
+            <th>Work Week</th>
+            <th>Employee Wage</th>
+            <th>Mon</th><th>Tue</th><th>Wed</th><th>Thr</th><th>Fri</th>
+            <th>Weekly Earnings</th>
+            <th>Earnings to Date</th>
+         </tr>
+         <tr ng-repeat = "weeks in guy.schedule" ng-hide = "guy.hideVal">
+            <td>{{weeks[0]}}</td>
+            <td>{{weeks[6]}}</td>
+            <td>{{weeks[1]}}</td>
+            <td>{{weeks[2]}}</td>
+            <td>{{weeks[3]}}</td>
+            <td>{{weeks[4]}}</td>
+            <td>{{weeks[5]}}</td>
+            <td>{{weeks[7]}}</td>
+            <td>{{weeks[8]}}</td>
+         </tr>
+         <br>
+      </table><br><br>
+      <br><br>
+      <div class="signature"> </div>
+      <div style="text-align:center"> Supervisor </div>
+      
+   <script>
+      var mainApp = angular.module("mainApp",[]);
+      mainApp.controller("mainController", function($scope) {
+         var total = 0.00;
+         $scope.employee = {
+            employeeList: [],
+            holdName: "",
+            holdWage: "",
+            holdWeek: "",
+            holdHours: "",
+            holdDay: 0,
+            addHours: function() {
+               var index = -1;
+               var week = parseInt($scope.employee.holdWeek);
+               var hours = parseFloat($scope.employee.holdHours);
+               var wage = parseFloat($scope.employee.holdWage);
+               var earned = wage*hours;
+               var sum = 0;
+               for (var i = 0; i < $scope.employee.employeeList.length; i++) {
+                  if ($scope.employee.employeeList[i].name == $scope.employee.holdName) {
+                     index = i;
+                     break;
+                  }
+               }
+               if (index == -1) {                                                   // if the employee isn't in the table
+                  $scope.employee.employeeList.push(
+                     {
+                        name: $scope.employee.holdName,
+                        earnings: 0.00,
+                        hideVal: false,
+                        schedule: [
+                           [week, 0, 0, 0, 0, 0, wage.toFixed(2), 0, 0]
+                        ]
+                     }
+                  );
+                  index = $scope.employee.employeeList.length-1;
+                  $scope.employee.employeeList[index].schedule[0][$scope.employee.holdDay] = hours;
+                  $scope.employee.employeeList[index].schedule[0][7] = earned.toFixed(2);
+                  $scope.employee.employeeList[index].schedule[0][8] = earned.toFixed(2)
+                  $scope.employee.employeeList[index].earnings += earned;
+               }
+               else {                                                            // if employee is in the table
+                  for (var i = 0; i < $scope.employee.employeeList[index].schedule.length; i++) {
+                     if ($scope.employee.employeeList[index].schedule[i][0] === week) {         // if this week is in the table
+                        $scope.employee.employeeList[index].schedule[i][$scope.employee.holdDay] = hours;
+                        total = 0;
+                        for (var j = 1; j < 6; j++) {
+                           total += ($scope.employee.employeeList[index].schedule[i][j])*(wage);
+                        }
+                        $scope.employee.employeeList[index].schedule[i][7] = total.toFixed(2);
+                        $scope.employee.employeeList[index].earnings += total;
+                        break;
+                     }
+                     if (i === $scope.employee.employeeList[index].schedule.length-1) {            // if we need to add a new week
+                        $scope.employee.employeeList[index].schedule.push([week, 0, 0, 0, 0, 0, wage.toFixed(2)]);
+                        $scope.employee.employeeList[index].schedule[$scope.employee.employeeList[index].schedule.length-1][$scope.employee.holdDay] = hours;
+                        $scope.employee.employeeList[index].schedule[$scope.employee.employeeList[index].schedule.length-1][7] = (wage*hours).toFixed(2);
+                        $scope.employee.employeeList[index].earnings += wage*hours;
+                        break;
+                     }
+                  }
+               }
+               $scope.employee.employeeList[index].schedule[0][8] = 0.00;
+               sum = 0;
+               for (var k = 0; k < $scope.employee.employeeList[index].schedule.length; k++) {
+                  sum += parseFloat($scope.employee.employeeList[index].schedule[k][7]);
+                  $scope.employee.employeeList[index].schedule[k][8] = sum.toFixed(2);
+               }
+               return;
+            }
+         };
+      });
+   </script>
+   </body>
+</html>
